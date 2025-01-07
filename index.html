@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Rampford County Signalling</title>
+        <script src="scripts/builtin_zones.js"></script>
+        <script src="scripts/rendering.js"></script>
+        <script src="scripts/game.js"></script>
+        <script src="scripts/editor.js"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@100..900&display=swap');
+            body {
+                margin: 0px; 
+                overflow: hidden; 
+                font-family: "Noto Sans Mono";
+                font-weight: 600; 
+            } 
+        </style>
+    </head>
+    <body>
+        <div id="home">
+            <h1>Rampford County Signalling</h1>
+            <p>
+                Welcome to Rampford County Signalling!
+                RCS is a signalling simulator modelled after the signalling in a certain
+                railway game in Roblox.
+            </p>
+            <div>
+                Zone G
+                <button onclick="play(ZONE_G)">Start</button>
+                <button onclick="edit(ZONE_G)">Edit</button>
+            </div>
+        </div>
+    </body>
+</html>
