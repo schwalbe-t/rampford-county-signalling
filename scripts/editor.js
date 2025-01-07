@@ -113,9 +113,6 @@ const edit = (() => {
             showProperties();
             editedSchedule = scheduleI;
             const schedule = zone.schedules[scheduleI];
-            addInputProperty("Schedule Name", schedule.name, v => {
-                schedule.name = v;
-            });
             addButton("Delete Schedule", () => {
                 zone.schedules = [
                     ...zone.schedules.slice(0, scheduleI),
@@ -127,11 +124,17 @@ const edit = (() => {
                 editedSchedule = NO_SCHEDULE;
             });
             addNewLine();
+            addInputProperty("Schedule Name", schedule.name, v => {
+                schedule.name = v;
+            });
+            addInputProperty("Starting Headcode", schedule.headcode, h => {
+                schedule.headcode = h;
+            });
             addNewLine();
             for(let sectionI = 0; sectionI < schedule.sections.length; sectionI += 1) {
                 const section = schedule.sections[sectionI];
                 addNewLine();
-                if(section.type === "platform") {
+                if(section.type === "platform") { 
                     addInputProperty("Station Name", section.station, v => {
                         section.station = v;
                     });
@@ -144,6 +147,9 @@ const edit = (() => {
                         try {
                             section.departure = parseFloat(t);
                         } catch(e) {}
+                    });
+                    addInputProperty("Headcode", section.headcode, h => {
+                        section.headcode = h;
                     });
                 }
                 for(const nodeI of section.nodes) {
@@ -176,11 +182,18 @@ const edit = (() => {
                 editSchedule(scheduleI);
             });
             addButton("Add Platform Section", () => {
+                let headcode = schedule.headcode;
+                for(const section of schedule.sections) {
+                    if(section.type === "platform") { 
+                        headcode = section.headcode; 
+                    }
+                }
                 schedule.sections.push({
                     type: "platform",
                     station: "unknown",
                     platform: 0,
                     departure: 0.0,
+                    headcode,
                     nodes: []
                 });
                 editSchedule(scheduleI);
@@ -202,6 +215,7 @@ const edit = (() => {
             addButton("<Create New Schedule>", () => {
                 zone.schedules.push({
                     name: `Schedule ${zone.schedules.length + 1}`,
+                    headcode: "??",
                     sections: []
                 });
                 editSchedule(zone.schedules.length - 1);
@@ -332,46 +346,13 @@ const edit = (() => {
 
     function drawLayout(r, zone) {
         for(const platform of zone.platforms) {
-            const first = zone.layout[platform.first];
-            const second = zone.layout[platform.second];
-            const diffX = second.x - first.x;
-            const diffY = second.y - first.y;
-            const diffL = Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
-            const aX = first.x + diffY / diffL;
-            const aY = first.y - diffX / diffL;
-            const bX = second.x - diffY / diffL;
-            const bY = second.y + diffX / diffL;
-            r.drawRect(aX, aY, bX - aX, bY - aY, [64, 64, 64]);
+            drawPlatformBase(r, zone, platform);
         }
         const drawnSignals = previewedSignal
             ? [...zone.signals, previewedSignal]
             : zone.signals;
         for(const signal of drawnSignals) {
-            const first = zone.layout[signal.first];
-            const second = zone.layout[signal.second];
-            const diffX = second.x - first.x;
-            const diffY = second.y - first.y;
-            const diffL = Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
-            const x = first.x + diffX * signal.offset;
-            const y = first.y + diffY * signal.offset;
-            const cornerX = x + diffY / diffL;
-            const cornerY = y - diffX / diffL;
-            const bottomX = cornerX + diffX / diffL;
-            const bottomY = cornerY + diffY / diffL;
-            r.drawLine(x, y, cornerX, cornerY, 0.125, [64, 64, 64]);
-            r.drawLine(cornerX, cornerY, bottomX, bottomY, 0.125, [64, 64, 64]);
-            switch(signal.aspect) {
-                case 4:
-                    const topX = bottomX + diffX / diffL * 0.5;
-                    const topY = bottomY + diffY / diffL * 0.5;
-                    r.drawCircle(topX, topY, 0.25, [255, 0, 0]);
-                case 3:
-                    r.drawCircle(bottomX, bottomY, 0.25, [255, 0, 0]);
-                    break;
-                case 2:
-                    r.drawRect(bottomX - 0.125, bottomY - 0.125, 0.25, 0.25, [255, 0, 0]);
-                    break;
-            }
+            drawSignal(r, zone, signal, SignalState.PREL_CAUTION);
         }
         for(const node of zone.layout) {
             if(node === null) { continue; } 
@@ -385,14 +366,7 @@ const edit = (() => {
             r.drawCircle(node.x, node.y, 0.5, [192, 192, 192]);
         }
         for(const platform of zone.platforms) {
-            const first = zone.layout[platform.first];
-            const second = zone.layout[platform.second];
-            const x = first.x + (second.x - first.x) / 2;
-            const y = first.y + (second.y - first.y) / 2;
-            r.drawText(
-                x, y, 1, [255, 255, 255], platform.platform,
-                650, `"Noto Sans Mono"`
-            );
+            drawPlatformNumber(r, zone, platform);
         }
         if(selected) {
             r.drawCircle(selected.x, selected.y, 0.5, [0, 0, 255]);
@@ -492,5 +466,4 @@ const edit = (() => {
     }
 
     return edit;
-    
 })();
